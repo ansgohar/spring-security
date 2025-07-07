@@ -1,0 +1,42 @@
+@startuml error_handling
+title Error Handling Flow
+
+start
+
+:Exception Occurs;
+
+if (Authentication Error?) then (yes)
+  :JwtAuthenticationEntryPoint;
+  :401 Unauthorized Response;
+elseif (Authorization Error?) then (yes)
+  :JwtAccessDeniedHandler;
+  :403 Forbidden Response;
+elseif (Validation Error?) then (yes)
+  :GlobalExceptionHandler;
+  :MethodArgumentNotValidException;
+  :400 Bad Request + Validation Details;
+elseif (Resource Not Found?) then (yes)
+  :GlobalExceptionHandler;
+  :ResourceNotFoundException;
+  :404 Not Found Response;
+elseif (Business Logic Error?) then (yes)
+  :GlobalExceptionHandler;
+  :InvalidRequestException;
+  :400 Bad Request Response;
+elseif (Permission Error?) then (yes)
+  :GlobalExceptionHandler;
+  :InsufficientPermissionsException;
+  :403 Forbidden Response;
+else (System Error)
+  :GlobalExceptionHandler;
+  :RuntimeException;
+  :500 Internal Server Error;
+endif
+
+:Audit Error Event;
+:Log Error Details;
+:Return Error Response;
+
+stop
+
+@enduml

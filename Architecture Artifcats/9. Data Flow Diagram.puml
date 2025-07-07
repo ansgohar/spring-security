@@ -1,0 +1,45 @@
+@startuml data_flow
+title Data Flow - GCP Identity Security Operations
+
+skinparam activity {
+  BackgroundColor lightblue
+  BorderColor darkblue
+  ArrowColor darkblue
+}
+
+start
+
+:Client Request;
+:OAuth2 Authentication;
+:JWT Token Validation;
+:Role-based Authorization;
+
+if (Admin Request?) then (yes)
+  :Admin Controller;
+  if (User Operation?) then (yes)
+    :GCP Identity Service;
+    :Google Cloud Identity API;
+    :User Data Response;
+  elseif (Group Operation?) then (yes)
+    :GCP Identity Service;
+    :Admin Directory API;
+    :Group Data Response;
+  else (Role Operation)
+    :Role Management Service;
+    :Local Role Storage;
+    :Role Data Response;
+  endif
+  :Audit Logging;
+else (User Request)
+  :User Controller;
+  :GCP Identity Service;
+  :User Profile Data;
+endif
+
+:Response Formatting;
+:Security Headers;
+:Client Response;
+
+stop
+
+@enduml

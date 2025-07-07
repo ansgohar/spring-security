@@ -1,0 +1,78 @@
+@startuml component_diagram
+!define RECTANGLE class
+
+title GCP Identity Security - Component Diagram
+
+package "Presentation Layer" {
+  [AdminController] as admin_ctrl
+  [UserController] as user_ctrl
+  [RoleManagementController] as role_ctrl
+  [HealthController] as health_ctrl
+}
+
+package "Security Layer" {
+  [SecurityConfig] as sec_config
+  [JwtAuthenticationEntryPoint] as jwt_entry
+  [JwtAccessDeniedHandler] as jwt_denied
+  [JwtAuthenticationConverter] as jwt_converter
+}
+
+package "Service Layer" {
+  [GcpIdentityService] as gcp_service
+  [RoleManagementService] as role_service
+  [AuthenticationService] as auth_service
+  [AuditService] as audit_service
+}
+
+package "Configuration Layer" {
+  [GcpConfig] as gcp_config
+  [ApplicationConfig] as app_config
+}
+
+package "Exception Handling" {
+  [GlobalExceptionHandler] as global_handler
+  [ResourceNotFoundException] as not_found
+  [InvalidRequestException] as invalid_request
+  [InsufficientPermissionsException] as insufficient_perms
+}
+
+package "External Integrations" {
+  [Google Cloud Identity API] as gci_api
+  [Admin Directory API] as admin_api
+  [Identity Service Client] as identity_client
+}
+
+' Presentation to Service connections
+admin_ctrl --> gcp_service : Uses
+admin_ctrl --> role_service : Uses
+admin_ctrl --> audit_service : Uses
+
+user_ctrl --> gcp_service : Uses
+user_ctrl --> auth_service : Uses
+
+role_ctrl --> role_service : Uses
+
+' Service to External connections
+gcp_service --> gci_api : Integrates
+gcp_service --> admin_api : Integrates
+auth_service --> identity_client : Uses
+
+' Security connections
+sec_config --> jwt_entry : Configures
+sec_config --> jwt_denied : Configures
+sec_config --> jwt_converter : Configures
+
+' Configuration connections
+gcp_config --> gcp_service : Configures
+gcp_config --> auth_service : Configures
+
+' Exception handling
+admin_ctrl --> global_handler : Handles
+user_ctrl --> global_handler : Handles
+role_ctrl --> global_handler : Handles
+
+global_handler --> not_found : Manages
+global_handler --> invalid_request : Manages
+global_handler --> insufficient_perms : Manages
+
+@enduml

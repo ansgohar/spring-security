@@ -1,0 +1,80 @@
+@startuml system_architecture
+!define RECTANGLE class
+!define CLOUD cloud
+!define DATABASE database
+!define INTERFACE interface
+
+title GCP Identity Security Microservice - System Architecture
+
+CLOUD "External Clients" as clients {
+  [Web Application]
+  [Mobile App]
+  [API Clients]
+}
+
+package "Security Layer" {
+  [OAuth2 Gateway] as oauth2
+  [JWT Token Validator] as jwt
+  [RBAC Engine] as rbac
+}
+
+package "GCP Identity Microservice" {
+  [Admin Controller] as admin_ctrl
+  [User Controller] as user_ctrl
+  [Role Controller] as role_ctrl
+  [Health Controller] as health_ctrl
+  
+  [GCP Identity Service] as gcp_service
+  [Role Management Service] as role_service
+  [Authentication Service] as auth_service
+  [Audit Service] as audit_service
+}
+
+package "Configuration" {
+  [Security Config] as sec_config
+  [GCP Config] as gcp_config
+}
+
+CLOUD "Google Cloud Platform" as gcp {
+  [Google Cloud Identity] as gci
+  [Admin Directory API] as admin_api
+  [Identity Service API] as identity_api
+}
+
+DATABASE "Audit Storage" as audit_db
+DATABASE "Local Role Storage" as role_db
+
+' Client connections
+clients --> oauth2 : HTTPS/OAuth2
+oauth2 --> jwt : Token Validation
+jwt --> rbac : Role Check
+
+' Controller layer
+rbac --> admin_ctrl : Admin Requests
+rbac --> user_ctrl : User Requests
+rbac --> role_ctrl : Role Requests
+
+' Service layer
+admin_ctrl --> gcp_service : User/Group Mgmt
+admin_ctrl --> role_service : Role Mgmt
+admin_ctrl --> audit_service : Audit Logging
+
+user_ctrl --> gcp_service : Profile Access
+user_ctrl --> auth_service : Authentication
+
+role_ctrl --> role_service : Role Operations
+
+' External integrations
+gcp_service --> gci : Identity Operations
+gcp_service --> admin_api : Directory Management
+auth_service --> identity_api : Token Validation
+
+' Configuration
+sec_config --> rbac : Security Rules
+gcp_config --> gcp_service : GCP Settings
+
+' Storage
+audit_service --> audit_db : Audit Logs
+role_service --> role_db : Role Data
+
+@enduml
