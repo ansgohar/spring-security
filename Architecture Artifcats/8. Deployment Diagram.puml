@@ -1,0 +1,89 @@
+@startuml deployment_diagram
+title Deployment Architecture - GCP Identity Security Service
+
+node "Load Balancer" as lb {
+  [HTTPS/SSL Termination]
+  [Traffic Distribution]
+}
+
+node "Kubernetes Cluster" as k8s {
+  package "Security Namespace" {
+    [GCP Identity Service Pod 1] as pod1
+    [GCP Identity Service Pod 2] as pod2
+    [GCP Identity Service Pod N] as podN
+  }
+  
+  package "Monitoring" {
+    [Prometheus] as prometheus
+    [Grafana] as grafana
+    [Jaeger] as jaeger
+  }
+  
+  package "Configuration" {
+    [ConfigMap] as configmap
+    [Secret] as secret
+  }
+}
+
+cloud "Google Cloud Platform" as gcp {
+  [Google Cloud Identity]
+  [Admin Directory API]
+  [Identity Service API]
+  [Cloud IAM]
+}
+
+database "PostgreSQL" as postgres {
+  [audit_events]
+  [roles]
+  [user_roles]
+  [permissions]
+}
+
+database "Redis Cache" as redis {
+  [Session Cache]
+  [Role Cache]
+  [Permission Cache]
+}
+
+storage "Google Cloud Storage" as gcs {
+  [Service Account Keys]
+  [Configuration Files]
+  [Audit Logs]
+}
+
+' External connections
+lb --> pod1 : HTTPS
+lb --> pod2 : HTTPS
+lb --> podN : HTTPS
+
+' Service connections
+pod1 --> gcp : API Calls
+pod2 --> gcp : API Calls
+podN --> gcp : API Calls
+
+pod1 --> postgres : Audit Data
+pod2 --> postgres : Role Data
+podN --> postgres : Queries
+
+pod1 --> redis : Caching
+pod2 --> redis : Sessions
+podN --> redis : Permissions
+
+' Configuration
+configmap --> pod1 : App Config
+configmap --> pod2 : App Config
+secret --> pod1 : Secrets
+secret --> pod2 : Secrets
+
+' Monitoring
+prometheus --> pod1 : Metrics
+prometheus --> pod2 : Metrics
+grafana --> prometheus : Visualization
+jaeger --> pod1 : Tracing
+jaeger --> pod2 : Tracing
+
+' Storage
+gcs --> pod1 : Keys & Config
+gcs --> pod2 : Keys & Config
+
+@enduml

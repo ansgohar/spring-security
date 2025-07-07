@@ -1,0 +1,47 @@
+@startuml security_flow
+title Security Flow - Authentication & Authorization
+
+actor User
+participant "Client Application" as client
+participant "OAuth2 Provider" as oauth2
+participant "JWT Filter" as jwt_filter
+participant "RBAC Engine" as rbac
+participant "Controller" as controller
+participant "Service Layer" as service
+
+User -> client : Login Request
+client -> oauth2 : OAuth2 Authentication
+oauth2 -> oauth2 : Validate Credentials
+oauth2 -> client : JWT Token
+client -> User : Token Received
+
+User -> client : API Request + Token
+client -> jwt_filter : HTTP Request + Authorization Header
+jwt_filter -> jwt_filter : Extract JWT Token
+jwt_filter -> jwt_filter : Validate Token Signature
+jwt_filter -> jwt_filter : Extract User Claims
+
+alt Token Valid
+  jwt_filter -> rbac : Check Role & Permissions
+  rbac -> rbac : Validate User Role
+  rbac -> rbac : Check Endpoint Permissions
+  
+  alt Authorization Successful
+    rbac -> controller : Forward Request
+    controller -> service : Business Logic
+    service -> controller : Response
+    controller -> rbac : Success Response
+    rbac -> jwt_filter : Success Response
+    jwt_filter -> client : HTTP 200 + Data
+    client -> User : Success Response
+  else Authorization Failed
+    rbac -> jwt_filter : 403 Forbidden
+    jwt_filter -> client : HTTP 403
+    client -> User : Access Denied
+  end
+else Token Invalid
+  jwt_filter -> client : HTTP 401 Unauthorized
+  client -> User : Authentication Required
+end
+
+@enduml

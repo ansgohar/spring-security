@@ -1,0 +1,41 @@
+@startuml user_creation_sequence
+title User Creation Flow - Sequence Diagram
+
+actor Admin
+participant "OAuth2 Gateway" as oauth2
+participant "Admin Controller" as admin_ctrl
+participant "GCP Identity Service" as gcp_service
+participant "Audit Service" as audit_service
+
+participant "Admin Directory API" as admin_api
+participant "Google Cloud Identity" as gci
+
+Admin -> oauth2 : POST /api/v1/admin/users\n{CreateUserRequest}
+oauth2 -> oauth2 : Validate JWT Token
+oauth2 -> oauth2 : Check ADMIN Role
+oauth2 -> admin_ctrl : Forward Request
+
+admin_ctrl -> admin_ctrl : Validate Request Data
+admin_ctrl -> gcp_service : createUser(request)
+
+gcp_service -> admin_api : Create User in GCP
+admin_api -> gci : User Creation
+gci -> admin_api : User Created
+admin_api -> gcp_service : User Response
+
+alt Groups Specified
+  loop For each group
+    gcp_service -> admin_api : Add User to Group
+    admin_api -> gci : Group Membership
+    gci -> admin_api : Membership Confirmed
+  end
+end
+
+gcp_service -> admin_ctrl : UserDto Response
+admin_ctrl -> audit_service : logUserCreation(adminEmail, userEmail)
+audit_service -> audit_service : Log Audit Event
+
+admin_ctrl -> oauth2 : 201 Created + UserDto
+oauth2 -> Admin : User Created Successfully
+
+@enduml

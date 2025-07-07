@@ -1,0 +1,106 @@
+@startuml class_diagram
+title GCP Identity Security - Core Models
+
+class UserDto {
+  +String email
+  +String firstName
+  +String lastName
+  +List<String> groups
+  +List<String> roles
+  +LocalDateTime createdAt
+  +LocalDateTime updatedAt
+  +boolean suspended
+}
+
+class GroupDto {
+  +String name
+  +String email
+  +String description
+  +List<String> members
+  +LocalDateTime createdAt
+  +LocalDateTime updatedAt
+}
+
+class RoleDto {
+  +String name
+  +String description
+  +List<String> permissions
+  +LocalDateTime createdAt
+  +LocalDateTime updatedAt
+}
+
+class CreateUserRequest {
+  +String email
+  +String firstName
+  +String lastName
+  +String password
+  +List<String> groups
+  +validate()
+}
+
+class AddUserToGroupRequest {
+  +String userEmail
+  +String groupEmail
+  +validate()
+}
+
+class GcpIdentityService {
+  -Directory directoryService
+  -IdentityServiceClient identityServiceClient
+  -GcpConfig gcpConfig
+  
+  +createUser(CreateUserRequest): UserDto
+  +getAllUsers(): List<UserDto>
+  +getUserByEmail(String): UserDto
+  +deleteUser(String): void
+  +suspendUser(String): void
+  +createGroup(GroupDto): GroupDto
+  +getAllGroups(): List<GroupDto>
+  +addUserToGroup(String, String): void
+  +removeUserFromGroup(String, String): void
+  +getUserGroups(String): List<String>
+  -mapToUserDto(User): UserDto
+  -mapToGroupDto(Group): GroupDto
+}
+
+class RoleManagementService {
+  -Map<String, RoleDto> roles
+  
+  +createRole(RoleDto): RoleDto
+  +getAllRoles(): List<RoleDto>
+  +getRoleByName(String): RoleDto
+  +updateRole(String, RoleDto): RoleDto
+  +deleteRole(String): void
+  +hasPermission(String, String): boolean
+  +getUserPermissions(List<String>): List<String>
+  -initializeDefaultRoles(): void
+}
+
+class AuditService {
+  +logUserCreation(String, String): void
+  +logUserDeletion(String, String): void
+  +logUserSuspension(String, String): void
+  +logGroupCreation(String, String): void
+  +logUserAddedToGroup(String, String, String): void
+  +logUserRemovedFromGroup(String, String, String): void
+  +logRoleCreation(String, String): void
+  +logRoleUpdate(String, String): void
+  +logRoleDeletion(String, String): void
+  +logUnauthorizedAccess(String, String): void
+  -createAuditEvent(String, String, String): Map<String, Object>
+  -logAuditEvent(Map<String, Object>): void
+}
+
+UserDto "1" *-- "0..*" GroupDto : belongsTo
+UserDto "1" *-- "0..*" RoleDto : hasRole
+GroupDto "1" *-- "0..*" UserDto : contains
+RoleDto "1" *-- "0..*" UserDto : assignedTo
+
+GcpIdentityService --> UserDto : creates
+GcpIdentityService --> GroupDto : manages
+RoleManagementService --> RoleDto : manages
+AuditService --> UserDto : audits
+AuditService --> GroupDto : audits
+AuditService --> RoleDto : audits
+
+@enduml
