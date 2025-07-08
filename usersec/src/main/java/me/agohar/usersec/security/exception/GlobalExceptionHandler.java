@@ -57,6 +57,9 @@ public class GlobalExceptionHandler {
         response.put("status", HttpStatus.BAD_REQUEST.value());
         response.put("error", "Validation Failed");
         response.put("message", "Input validation failed");
+        ///FIXME add the detailed exception objct for the debugging purpose       
+        response.put("message", "Input validation failed");
+
         response.put("validationErrors", errors);
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

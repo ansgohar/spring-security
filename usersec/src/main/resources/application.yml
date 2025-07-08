@@ -1,0 +1,62 @@
+server:
+  address: 127.0.0.1
+  port: 8083
+spring:
+  application:
+    name: usersec-gcp-identity-security-service
+  profiles:
+    active: local-test
+  # JWT configuration for Google OAuth2 (disabled when using local-test profile)
+  # security:
+  #   oauth2:
+  #     resourceserver:
+  #       jwt:
+  #         issuer-uri: https://accounts.google.com
+  #         jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+
+gcp:
+  project-id: ${GCP_PROJECT_ID:eunx-dev}
+  service-account-key-path: ${GCP_SERVICE_ACCOUNT_KEY_PATH:src/main/resources/eunx-dev-54f35d60dc30.json}
+  domain: ${GCP_DOMAIN:eunx.com}
+  
+logging:
+  level:
+    "[me.agohar.usersec]": DEBUG
+    "[org.springframework.security]": DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# SpringDoc OpenAPI configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    try-it-out-enabled: true
+    filter: true
+    display-request-duration: true
+  show-actuator: true
+  group-configs:
+    - group: 'admin'
+      display-name: 'Admin API'
+      paths-to-match: '/api/v1/admin/**'
+    - group: 'admin-audit'
+      display-name: 'Admin Audit API'
+      paths-to-match: '/api/v1/admin-audit/**'
+    - group: 'user'
+      display-name: 'User API'
+      paths-to-match: '/api/v1/users/**'
+    - group: 'auth'
+      display-name: 'Authentication API'
+      paths-to-match: '/api/v1/auth/**'
